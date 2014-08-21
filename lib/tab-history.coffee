@@ -24,7 +24,7 @@ class TabHistory
     atom.workspaceView.command "tab-history:previous", @previous.bind(@)
     atom.workspaceView.command "tab-history:next", @next.bind(@)
 
-    @items = [].concat(@pane.items).reverse()
+    @items = @pane.items.slice().reverse()
     @pushActiveItem()
 
   deactivate: ->
@@ -48,6 +48,7 @@ class TabHistory
     @pushActiveItem()
 
   pushActiveItem: ->
+    return if !@pane.activeItem
     @removePane(@pane.activeItem)
     @items.push(@pane.activeItem)
     @log()
