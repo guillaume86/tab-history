@@ -1,7 +1,7 @@
 {
   "name": "tab-history",
   "main": "./lib/tab-history",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Cycle tabs by last focused in Atom.",
   "activationEvents": [],
   "repository": "https://github.com/guillaume86/tab-history",
