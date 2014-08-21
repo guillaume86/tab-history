@@ -1,0 +1,15 @@
+{
+  "name": "tab-history",
+  "main": "./lib/tab-history",
+  "version": "0.1.0",
+  "description": "Cycle tabs by last focused in Atom.",
+  "activationEvents": [],
+  "repository": "https://github.com/guillaume86/tab-history",
+  "license": "MIT",
+  "engines": {
+    "atom": ">=0.72.0"
+  },
+  "dependencies": {
+    "emissary": "^1.2.2"
+  }
+}
