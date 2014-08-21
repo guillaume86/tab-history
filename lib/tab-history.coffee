@@ -1,11 +1,10 @@
 {Subscriber} = require 'emissary'
 
-# TODO: handle several panes + different modifier keys
 class TabHistory
   constructor: (@paneView) ->
     Subscriber.extend @
     @pane = @paneView.model
-    @mainModifier = 'ctrlKey'
+    @mainModifierKeyCode = 17
     @items = []
     @isSwitching = false
 
@@ -19,6 +18,7 @@ class TabHistory
     @subscribe @paneView, 'keyup', @onKeyUp.bind(@)
 
     @subscribe @paneView, 'pane:active-item-changed', @onActiveItemChanged.bind(@)
+    @subscribe @paneView, 'pane:item-added', @onItemAdded.bind(@)
     @subscribe @paneView, 'pane:item-removed', @onItemRemoved.bind(@)
 
     atom.workspaceView.command "tab-history:previous", @previous.bind(@)
@@ -29,17 +29,18 @@ class TabHistory
 
   deactivate: ->
     @unsubscribe()
-
-    atom.workspaceView.off 'pane:active-item-changed'
-    atom.workspaceView.off 'pane:item-removed'
-
     @items = []
 
   onKeyUp: (event) ->
-    if !event[@mainModifier] and @switching = true
+    if @isSwitching and event.keyCode == @mainModifierKeyCode
       @pushActiveItem()
-      @switching = false
-    return true
+      @isSwitching = false
+    return
+
+  onItemAdded: (event, item) ->
+    return unless (item in @pane.items)
+    @isSwitching = false
+    @pushActiveItem()
 
   onActiveItemChanged: (event, item) ->
     return unless (item in @pane.items)
@@ -67,7 +68,6 @@ class TabHistory
       @pane.activateNextItem()
       return
     @pane.activateItem(@items[(index + @items.length - 1) % @items.length])
-    @log()
 
   next: (event) ->
     return unless @isActivePane()
@@ -77,11 +77,10 @@ class TabHistory
       @pane.activatePreviousItem()
       return
     @pane.activateItem(@items[(index + 1) % @items.length])
-    @log()
 
 module.exports =
   activate: (state) ->
-    @tabHistories = [];
+    @tabHistories = []
     @paneSubscription = atom.workspaceView.eachPaneView((paneView) =>
       tabHistory = new TabHistory(paneView)
       tabHistory.activate()
