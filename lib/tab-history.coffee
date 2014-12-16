@@ -6,11 +6,12 @@ class TabHistory
     @pane = @paneView.model
     @mainModifierKeyCode = 17
     @items = []
+    @previousItems = null
     @isSwitching = false
 
   log: () ->
-    # console.log { @isSwitching }
-    # console.log @items.map((item) -> item.getTitle())
+    console.log { @isSwitching }
+    console.log @items.map((item) -> item.getTitle())
 
   isActivePane: -> atom.workspace.activePane == @pane
 
@@ -30,6 +31,7 @@ class TabHistory
   deactivate: ->
     @unsubscribe()
     @items = []
+    @previousItems = null
 
   onKeyUp: (event) ->
     if @isSwitching and event.keyCode == @mainModifierKeyCode
@@ -46,12 +48,16 @@ class TabHistory
     return unless (item in @pane.items)
     return if @isSwitching
     @pushActiveItem()
+    
+  storeItems: ->
+    @previousItems = @items.slice()
 
   pushActiveItem: ->
     return if !@pane.activeItem
+    # store previous stack to handle tab closing
+    @storeItems()
     @removePane(@pane.activeItem)
     @items.push(@pane.activeItem)
-    @log()
 
   removePane: (paneItem) ->
     index = @items.indexOf paneItem
@@ -59,7 +65,16 @@ class TabHistory
     @items.splice(index, 1)
 
   onItemRemoved: (event, item) ->
+    return unless (item in @items)
+    
+    # focus most recent tab if active tab was closed
+    @items = @previousItems
+    @previousItems = null
+    if @items.length > 2 && @items[@items.length - 1] == item
+      @pane.activateItem(@items[@items.length - 2])
+      
     @removePane(item)
+    @storeItems()
 
   previous: (event) ->
     return unless @isActivePane()
@@ -89,7 +104,8 @@ module.exports =
       onPaneViewRemoved = (event, removedPaneView) =>
         return if paneView != removedPaneView
         tabHistory.deactivate()
-        @tabHistories.splice(@tabHistories.indexOf(tabHistory), 1)
+        if @tabHistories?
+          @tabHistories.splice(@tabHistories.indexOf(tabHistory), 1)
       atom.workspaceView.on('pane:removed', onPaneViewRemoved)
     )
 
